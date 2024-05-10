@@ -22,6 +22,8 @@ BOARD_BACKGROUND_COLOR = (0, 0, 0)
 # Цвет границы ячейки
 BORDER_COLOR = (93, 216, 228)
 
+DEFAULT_COLOR = (100, 100, 100)
+
 # Цвет яблока
 APPLE_COLOR = (255, 0, 0)
 
@@ -44,30 +46,24 @@ clock = pygame.time.Clock()
 
 # Тут опишите все классы игры.
 class GameObject:
-    position = SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2
-    body_color = (0, 0, 0)
-
-    def __init__(self, position, body_color):
-        self.position = position
-        self.body_color = body_color
+    def __init__(self):
+        self.position = CENTER_POSITION
+        self.body_color = DEFAULT_COLOR
 
     def draw(self):
+
         pass
 
 
 class Apple(GameObject):
-    body_color = APPLE_COLOR
-    position = 0, 0
-
-    def __init__(self, body_color=APPLE_COLOR, position=CENTER_POSITION):
-        super().__init__(position, body_color)
+    def __init__(self) -> None:
         self.body_color = APPLE_COLOR
         self.position = self.randomize_position()
 
     @staticmethod
     def randomize_position():
-        x_coord = randint(0, SCREEN_WIDTH - GRID_SIZE)
-        y_coord = randint(0, SCREEN_HEIGHT - GRID_SIZE)
+        x_coord = randint(0, SCREEN_WIDTH - 1)
+        y_coord = randint(0, SCREEN_HEIGHT - 1)
         print(f'apple cords: {x_coord}, {y_coord}')
         return x_coord, y_coord
 
@@ -78,20 +74,12 @@ class Apple(GameObject):
 
 
 class Snake(GameObject):
-    length = 1
-    position = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
-    direction = RIGHT
-    next_direction = None
-    body_color = SNAKE_COLOR
-
-    def __init__(self, length=1, direction=RIGHT, next_direction=None, body_color=SNAKE_COLOR,
-                 position=CENTER_POSITION):
-        super().__init__(position, body_color)
-        self.length = length
-        self.positions = [position]
-        self.body_color = body_color
-        self.direction = direction
-        self.next_direction = next_direction
+    def __init__(self):
+        self.length = 1
+        self.positions = [CENTER_POSITION]
+        self.body_color = SNAKE_COLOR
+        self.direction = RIGHT
+        self.next_direction = None
 
     def update_direction(self):
         if self.next_direction:
@@ -102,17 +90,15 @@ class Snake(GameObject):
         head_x, head_y = self.positions[0]
 
         if self.direction == RIGHT:
-            head_x += 5
+            head_x += 1
         elif self.direction == LEFT:
-            head_x -= 5
+            head_x -= 1
         elif self.direction == UP:
-            head_y -= 5
+            head_y -= 1
         elif self.direction == DOWN:
-            head_y += 5
+            head_y += 1
         new_head_position = (head_x, head_y)
-        # if new_head_position in self.positions:
-        #     self.reset()
-        # else:
+
         # Увеличение змейки
         if len(self.positions) < self.length:
             self.positions.insert(0, new_head_position)
@@ -121,9 +107,12 @@ class Snake(GameObject):
             self.positions.pop(-1)
         else:
             self.positions[0] = new_head_position
-    # Дописать рестарт
+
+
+
     def reset(self):
-        self.positions = CENTER_POSITION
+        #реализовать метод перезапуска игры
+        pass
     def draw(self):
         for position in self.positions[:-1]:
             rect = (pygame.Rect(position, (GRID_SIZE, GRID_SIZE)))
