@@ -43,7 +43,7 @@ pygame.display.set_caption('Змейка')
 clock = pygame.time.Clock()
 
 
-# Тут опишите все классы игры.
+# Клас родитель
 class GameObject:
     def __init__(self):
         self.position = CENTER_POSITION
@@ -53,7 +53,7 @@ class GameObject:
         # Метод для переопределения
         pass
 
-
+# Дочерний клас описывающий яблоко
 class Apple(GameObject):
     def __init__(self) -> None:
         self.body_color = APPLE_COLOR
@@ -71,6 +71,7 @@ class Apple(GameObject):
         pygame.draw.rect(screen, BORDER_COLOR, rect, 1)
 
 
+# Дочерний клас описывающий змейку
 class Snake(GameObject):
     position = CENTER_POSITION
 
