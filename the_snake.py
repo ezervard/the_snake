@@ -31,7 +31,7 @@ APPLE_COLOR = (255, 0, 0)
 SNAKE_COLOR = (0, 255, 0)
 
 # Скорость движения змейки:
-SPEED = 30
+SPEED = 10
 
 
 # Настройка игрового окна:
@@ -62,9 +62,9 @@ class Apple(GameObject):
 
     @staticmethod
     def randomize_position():
-        x_coord = randint(0, SCREEN_WIDTH - 1)
-        y_coord = randint(0, SCREEN_HEIGHT - 1)
-        print(f'apple cords: {x_coord}, {y_coord}')
+        x_coord = randint(0, GRID_WIDTH - 1) * GRID_SIZE
+        y_coord = randint(0, GRID_HEIGHT  - 1) * GRID_SIZE
+        #print(f'apple cords: {x_coord}, {y_coord}')
         return x_coord, y_coord
 
     def draw(self):
@@ -74,6 +74,8 @@ class Apple(GameObject):
 
 
 class Snake(GameObject):
+    position = CENTER_POSITION
+
     def __init__(self):
         self.length = 1
         self.positions = [CENTER_POSITION]
@@ -85,18 +87,21 @@ class Snake(GameObject):
         if self.next_direction:
             self.direction = self.next_direction
             self.next_direction = None
+    
+    def get_head_position(self):
+        return self.positions[0]
 
     def move(self):
         head_x, head_y = self.positions[0]
 
         if self.direction == RIGHT:
-            head_x += 1
+            head_x += GRID_SIZE
         elif self.direction == LEFT:
-            head_x -= 1
+            head_x -= GRID_SIZE
         elif self.direction == UP:
-            head_y -= 1
+            head_y -= GRID_SIZE
         elif self.direction == DOWN:
-            head_y += 1
+            head_y += GRID_SIZE
         new_head_position = (head_x, head_y)
 
         # Увеличение змейки
@@ -163,13 +168,16 @@ def main():
         apple_x, apple_y = apple.position
 
         # Столкновение с яблоком
+        snake_x , snake_y = snake.get_head_position()
+        apple_x , apple_y = apple.position
 
-        if snake_x - apple_x < 5 and snake_y - apple_y < 5:
-            apple.position = apple.randomize_position()
+        if snake_x - apple_x <= 5 and snake_y - apple_y <= 5:
+            
             snake.length += 1
-
+            apple.position = apple.randomize_position()
             print(snake.length)
-            print()
+
+        
         pygame.display.update()
 
 
