@@ -50,7 +50,7 @@ class GameObject:
         self.body_color = DEFAULT_COLOR
 
     def draw(self):
-        #Метод для переопределения
+        # Метод для переопределения
         pass
 
 
@@ -62,8 +62,7 @@ class Apple(GameObject):
     @staticmethod
     def randomize_position():
         x_coord = randint(0, GRID_WIDTH - 1) * GRID_SIZE
-        y_coord = randint(0, GRID_HEIGHT  - 1) * GRID_SIZE
-        #print(f'apple cords: {x_coord}, {y_coord}')
+        y_coord = randint(0, GRID_HEIGHT - 1) * GRID_SIZE
         return x_coord, y_coord
 
     def draw(self):
@@ -86,37 +85,36 @@ class Snake(GameObject):
         if self.next_direction:
             self.direction = self.next_direction
             self.next_direction = None
-    
+
     def get_head_position(self):
         return self.positions[0]
 
     def move(self):
         head_x, head_y = self.positions[0]
         dx, dy = self.direction
-        
+
         # Двигаем голову
         new_head_x = (head_x + dx * GRID_SIZE) % SCREEN_WIDTH
         new_head_y = (head_y + dy * GRID_SIZE) % SCREEN_HEIGHT
-        
+
         new_head_position = (new_head_x, new_head_y)
 
         if new_head_position in self.positions:
             self.reset()
 
-    # Вставляем новую позицию головы
         self.positions.insert(0, new_head_position)
 
-    # Проверяем, не съела ли змея саму себя
-        if len(self.positions) > self.length :
+        if len(self.positions) > self.length:
             self.positions.pop()
 
-
+    # Метод для сброса змейки
     def reset(self):
         self.length = 1
         self.positions = [CENTER_POSITION]
         self.direction = RIGHT
         self.next_direction = None
-            
+
+    # Метод для отрисовки змейки
     def draw(self):
         for position in self.positions[:-1]:
             rect = (pygame.Rect(position, (GRID_SIZE, GRID_SIZE)))
@@ -132,7 +130,7 @@ class Snake(GameObject):
             last_rect = pygame.Rect(self.positions[-1], (GRID_SIZE, GRID_SIZE))
             pygame.draw.rect(screen, BOARD_BACKGROUND_COLOR, last_rect)
 
-
+# Метод дл обработки нажатий клавиш
 def handle_keys(game_object):
     for event in pygame.event.get():
         # print(event)
@@ -149,7 +147,7 @@ def handle_keys(game_object):
             elif event.key == pygame.K_RIGHT and game_object.direction != LEFT:
                 game_object.next_direction = RIGHT
 
-
+# Основной цикл игры
 def main():
     pygame.init()
     apple = Apple()
@@ -158,9 +156,6 @@ def main():
 
     while run:
         clock.tick(SPEED)
-        
-        # Обновление состояния клавиатуры
-        pygame.event.pump()
         handle_keys(snake)
         screen.fill(BOARD_BACKGROUND_COLOR)
         apple.draw()
@@ -170,15 +165,13 @@ def main():
         snake_x, snake_y = snake.positions[0]
         apple_x, apple_y = apple.position
 
-        # Столкновение с яблоком
-        snake_x , snake_y = snake.get_head_position()
-        apple_x , apple_y = apple.position
+        snake_x, snake_y = snake.get_head_position()
+        apple_x, apple_y = apple.position
 
         if snake.positions[0] == apple.position:
             snake.length += 1
             apple.position = apple.randomize_position()
-            
-            
+
         pygame.display.update()
 
 
