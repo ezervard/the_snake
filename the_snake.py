@@ -75,21 +75,21 @@ class Apple(GameObject):
         self.position = self.randomize_position()
 
     @staticmethod
-    def randomize_position() -> tuple[int, int]:
-        """Метод для случайной генерации позиции яблока"""
-        x_coord = randint(0, GRID_WIDTH - 1) * GRID_SIZE
-        y_coord = randint(0, GRID_HEIGHT - 1) * GRID_SIZE
-
-        return x_coord, y_coord
+    def randomize_position(snake_pos=CENTER_POSITION) -> tuple[int, int]:
+        """Метод для случайной генерации позиции яблока
+        с учётом позиции змейки.
+        """
+        while True:
+            x_coord = randint(0, GRID_WIDTH - 1) * GRID_SIZE
+            y_coord = randint(0, GRID_HEIGHT - 1) * GRID_SIZE
+            if (x_coord, y_coord) in snake_pos:
+                continue
+            else:
+                return x_coord, y_coord
 
     def draw(self) -> None:
         """Метод для отрисовки яблока"""
         self.draw_cell(self.position, self.body_color)
-
-    def check_position(self, snake_pos) -> None:
-        """Метод для проверки координат змейки"""
-        if self.position in snake_pos:
-            self.position = self.randomize_position()
 
 
 class Snake(GameObject):
@@ -175,9 +175,9 @@ def main() -> None:
         snake.move()
         snake.update_direction()
 
-        if snake.positions[0] == apple.position:
+        if snake.get_head_position() == apple.position:
             snake.length += 1
-            apple.check_position(snake.positions)
+            apple.position = apple.randomize_position(snake.positions)
 
         pygame.display.update()
 
