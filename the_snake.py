@@ -61,6 +61,9 @@ class GameObject:
         pygame.draw.rect(screen, body_color, rect)
         pygame.draw.rect(screen, BORDER_COLOR, rect, 1)
 
+    def draw(self):
+        raise NotImplementedError
+
 
 class Apple(GameObject):
     """Клас описывающий яблоко"""
