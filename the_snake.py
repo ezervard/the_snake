@@ -62,6 +62,7 @@ class GameObject:
         pygame.draw.rect(screen, BORDER_COLOR, rect, 1)
 
     def draw(self):
+        """Метод для переопределения в дочерних классах"""
         raise NotImplementedError
 
 
