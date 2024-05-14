@@ -44,6 +44,11 @@ screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT + 30), 0, 32)
 # Переменная состояний
 STATE = "game_play"
 
+BACKGROUND_MUSIC = pygame.mixer.Sound('sounds/8-bit-music-2.mp3')
+APPLE_SOUND = pygame.mixer.Sound('sounds/apple.mp3')
+SELF_EAT_SOUND = pygame.mixer.Sound('sounds/cartoon-hammer.mp3')
+GAME_OVER_SOUND = pygame.mixer.Sound('sounds/8bit — Game Over (www.lightaudio.ru).mp3')
+CHOISE_SOUND = pygame.mixer.Sound('sounds/mario-coin-sound-effect.mp3')
 
 # Заголовок окна игрового поля:
 pygame.display.set_caption('Змейка')
@@ -130,6 +135,7 @@ class Snake(GameObject):
 
         if new_head_position in self.positions:
             self.reset()
+            SELF_EAT_SOUND.play()
             STATE = 'game_over'
 
         self.positions.insert(0, new_head_position)
@@ -181,6 +187,7 @@ def handle_special_keys(event) -> None:
     if event.key == pygame.K_ESCAPE:
         quit_game()
     elif event.key == pygame.K_SPACE:
+        CHOISE_SOUND.play()
         state_change()
 
 
@@ -201,12 +208,15 @@ def state_change() -> None:
         STATE = "game_play"
 
 
+
 def main() -> None:
     """Основной цикл игры"""
     global SPEED
     pygame.init()
     apple = Apple()
     snake = Snake()
+    BACKGROUND_MUSIC.set_volume(0.1)
+    BACKGROUND_MUSIC.play()
 
     while True:
         if STATE == "game_play":
@@ -220,12 +230,14 @@ def main() -> None:
             pygame.draw.line(screen, (50, 56, 50), (0, SCREEN_HEIGHT), (SCREEN_WIDTH, SCREEN_HEIGHT), 3)
             screen.blit(pl.score_text, (10, SCREEN_HEIGHT + 10))
             screen.blit(pl.info, (150, SCREEN_HEIGHT + 10))
-
+            GAME_OVER_SOUND.stop()
             if snake.get_head_position() == apple.position:
                 snake.length += 1
                 score = snake.length - 1
                 SPEED += 0.1
                 apple.position = apple.randomize_position(snake.positions)
+                APPLE_SOUND.set_volume(300)
+                APPLE_SOUND.play()
                 pl.score_text = pl.score_font.render(f"Score: {score}", True, pygame.color.Color('White'))
                 pl.loose_score = pl.loose_font.render(f"You Score: {score}", True, pygame.color.Color(pl.RED_CLR))
             pygame.display.update()
