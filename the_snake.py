@@ -2,6 +2,8 @@ from random import randint, choice
 
 import pygame
 
+import placeholders as pl
+
 # Константы для размеров поля и сетки:
 SCREEN_WIDTH, SCREEN_HEIGHT = 640, 480
 GRID_SIZE = 20
@@ -37,7 +39,11 @@ SNAKE_COLOR = (0, 255, 0)
 SPEED = 10
 
 # Настройка игрового окна:
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), 0, 32)
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT + 30), 0, 32)
+
+# Переменная состояний
+STATE = "game_play"
+
 
 # Заголовок окна игрового поля:
 pygame.display.set_caption('Змейка')
@@ -113,6 +119,7 @@ class Snake(GameObject):
 
     def move(self) -> None:
         """Метод описывающий движение змейки по игровому полю"""
+        global STATE
         dx, dy = self.direction
         head_x, head_y = self.get_head_position()
 
@@ -123,6 +130,7 @@ class Snake(GameObject):
 
         if new_head_position in self.positions:
             self.reset()
+            STATE = 'game_over'
 
         self.positions.insert(0, new_head_position)
 
@@ -144,42 +152,94 @@ class Snake(GameObject):
 
 
 def handle_keys(game_object) -> None:
-    """Функция для обработки нажатия клавиш"""
+    """Функция для обработки нажатий клавиш"""
+    global STATE
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            pygame.quit()
-            raise SystemExit
+            quit_game()
         elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_UP and game_object.direction != DOWN:
-                game_object.next_direction = UP
-            elif event.key == pygame.K_DOWN and game_object.direction != UP:
-                game_object.next_direction = DOWN
-            elif event.key == pygame.K_LEFT and game_object.direction != RIGHT:
-                game_object.next_direction = LEFT
-            elif event.key == pygame.K_RIGHT and game_object.direction != LEFT:
-                game_object.next_direction = RIGHT
+            handle_direction(event, game_object)
+            handle_special_keys(event)
+
+
+def handle_direction(event, game_object) -> None:
+    """Метод описывающий изменение направления"""
+    if event.key == pygame.K_UP and game_object.direction != DOWN:
+        game_object.next_direction = UP
+    elif event.key == pygame.K_DOWN and game_object.direction != UP:
+        game_object.next_direction = DOWN
+    elif event.key == pygame.K_LEFT and game_object.direction != RIGHT:
+        game_object.next_direction = LEFT
+    elif event.key == pygame.K_RIGHT and game_object.direction != LEFT:
+        game_object.next_direction = RIGHT
+
+
+def handle_special_keys(event) -> None:
+    """Обработка специальных клавиш"""
+    global STATE
+    if event.key == pygame.K_ESCAPE:
+        quit_game()
+    elif event.key == pygame.K_SPACE:
+        state_change()
+
+
+def quit_game() -> None:
+    """Выход из игры"""
+    pygame.quit()
+    raise SystemExit
+
+
+def state_change() -> None:
+    """Изменение переменной состояния"""
+    global STATE
+    if STATE == "game_play":
+        STATE = "game_pause"
+    elif STATE == "game_pause":
+        STATE = "game_play"
+    elif STATE == "game_over":
+        STATE = "game_play"
 
 
 def main() -> None:
     """Основной цикл игры"""
+    global SPEED
     pygame.init()
     apple = Apple()
     snake = Snake()
 
     while True:
-        clock.tick(SPEED)
-        handle_keys(snake)
-        screen.fill(BOARD_BACKGROUND_COLOR)
-        apple.draw()
-        snake.draw()
-        snake.move()
-        snake.update_direction()
+        if STATE == "game_play":
+            clock.tick(SPEED)
+            handle_keys(snake)
+            screen.fill(BOARD_BACKGROUND_COLOR)
+            apple.draw()
+            snake.draw()
+            snake.move()
+            snake.update_direction()
+            pygame.draw.line(screen, (50, 56, 50), (0, SCREEN_HEIGHT), (SCREEN_WIDTH, SCREEN_HEIGHT), 3)
+            screen.blit(pl.score_text, (10, SCREEN_HEIGHT + 10))
+            screen.blit(pl.info, (150, SCREEN_HEIGHT + 10))
 
-        if snake.get_head_position() == apple.position:
-            snake.length += 1
-            apple.position = apple.randomize_position(snake.positions)
-
-        pygame.display.update()
+            if snake.get_head_position() == apple.position:
+                snake.length += 1
+                score = snake.length - 1
+                SPEED += 0.1
+                apple.position = apple.randomize_position(snake.positions)
+                pl.score_text = pl.score_font.render(f"Score: {score}", True, pygame.color.Color('White'))
+                pl.loose_score = pl.loose_font.render(f"You Score: {score}", True, pygame.color.Color(pl.RED_CLR))
+            pygame.display.update()
+        elif STATE == "game_pause":
+            handle_keys(snake)
+            screen.blit(pl.pause_text, (280, 180))
+            screen.blit(pl.pause_info, (220, 230))
+            pygame.display.update()
+        elif STATE == "game_over":
+            handle_keys(snake)
+            screen.blit(pl.loose_text, (260, 180))
+            screen.blit(pl.loose_info, (225, 230))
+            screen.blit(pl.loose_score, (260, 280))
+            pygame.display.update()
 
 
 if __name__ == '__main__':
