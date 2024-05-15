@@ -1,12 +1,10 @@
-import sys
-
 from random import randint, choice
-
-import os
 
 import pygame
 
 import placeholders as pl
+
+import ai_snake as ai
 
 # Константы для размеров поля и сетки:
 SCREEN_WIDTH, SCREEN_HEIGHT = 640, 480
@@ -29,7 +27,7 @@ BOARD_BACKGROUND_COLOR = (108, 156, 31)
 BACKGROUND_IMG = pygame.image.load('images/background.png')
 BACKGROUND_IMG = pygame.transform.scale(BACKGROUND_IMG, (640, 490))
 
-# Цвет границы ячейки
+# Цвет границы ячеек
 BORDER_COLOR = (93, 216, 228)
 
 # Цвет по умолчанию
@@ -49,6 +47,7 @@ screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT + 30), 0, 32)
 
 # Переменная состояний
 STATE = "game_play"
+
 
 # Игровые звуки
 BACKGROUND_MUSIC = pygame.mixer.Sound('sounds/main_theme.mp3')
@@ -90,7 +89,7 @@ class Apple(GameObject):
         """Инициализация яблока"""
         self.body_color = APPLE_COLOR
         self.image = pygame.image.load('images/apple.png')
-        self.image = pygame.transform.scale(self.image, (20, 20))
+        self.image = pygame.transform.scale(self.image, (25, 25))
         self.position = self.randomize_position()
 
     @staticmethod
@@ -181,15 +180,21 @@ class Snake(GameObject):
         self.head = pygame.transform.scale(self.head, (20, 20))
         self.tail = pygame.image.load('images/snake_tail.png')
         self.tail = pygame.transform.scale(self.tail, (20, 20))
+        self.tail = pygame.transform.rotate(self.tail, 90)
         self.head_rot = self.head
 
     def draw(self):
         """Метод для отрисовки змейки"""
-        for position in self.positions:
+        for i, position in enumerate(self.positions):
             if position == self.get_head_position():
                 screen.blit(self.head_rot, position)
-            elif position == self.positions[-1]:
-                screen.blit(self.tail, position)
+            elif i == len(self.positions) - 1:
+                # Поворачиваем хвост
+                dx = self.positions[-1][0] - self.positions[-2][0]
+                dy = self.positions[-1][1] - self.positions[-2][1]
+                angle = pygame.math.Vector2(dx, dy).angle_to((1, 0))
+                rotated_tail = pygame.transform.rotate(self.tail, angle)
+                screen.blit(rotated_tail, position)
             else:
                 screen.blit(self.image, position)
 
@@ -206,6 +211,7 @@ def handle_keys(game_object) -> None:
             handle_special_keys(event)
 
 
+@ai.check_ai
 def handle_direction(event, game_object) -> None:
     """Метод описывающий изменение направления"""
     if event.key == pygame.K_UP and game_object.direction != DOWN:
@@ -218,8 +224,6 @@ def handle_direction(event, game_object) -> None:
         game_object.next_direction = RIGHT
 
 
-
-
 def handle_special_keys(event) -> None:
     """Обработка специальных клавиш"""
     global STATE
@@ -228,6 +232,11 @@ def handle_special_keys(event) -> None:
     elif event.key == pygame.K_SPACE:
         CHOOSE_SOUND.play()
         state_change()
+    elif event.key == pygame.K_F1:
+        if not ai.AI_STATE:
+            ai.AI_STATE = True
+        else:
+            ai.AI_STATE = False
 
 
 def quit_game() -> None:
@@ -258,6 +267,7 @@ def main() -> None:
 
     while True:
         if STATE == "game_play":
+            print(ai.AI_STATE)
             clock.tick(SPEED)
             handle_keys(snake)
             screen.fill(BOARD_BACKGROUND_COLOR)
