@@ -116,7 +116,9 @@ class Snake(GameObject):
     position = CENTER_POSITION
 
     def __init__(self) -> None:
+
         """Инициализация змейки"""
+        self.direction = DEFAULT_DIRECTION
         self.reset()
 
     def update_direction(self) -> None:
@@ -129,6 +131,7 @@ class Snake(GameObject):
         """Метод для получения позиции головы змейки"""
         return self.positions[0]
 
+    @ai.ai_move(self.direction )
     def move(self) -> None:
         """Метод описывающий движение змейки по игровому полю"""
         global STATE
@@ -142,6 +145,7 @@ class Snake(GameObject):
 
         if new_head_position in self.positions:
             self.reset()
+            ai.REWARDS = - 10
             SELF_EAT_SOUND.play()
             STATE = 'game_over'
 
@@ -286,6 +290,7 @@ def main() -> None:
                 apple.position = apple.randomize_position(snake.positions)
                 APPLE_SOUND.set_volume(300)
                 APPLE_SOUND.play()
+                ai.REWARDS = 10
                 pl.score_text = pl.score_font.render(f"Score: {score}", True, pygame.color.Color('White'))
                 pl.loose_score = pl.loose_font.render(f"You Score: {score}", True, pygame.color.Color(pl.RED_CLR))
             pygame.display.update()
