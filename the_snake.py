@@ -4,7 +4,6 @@ import pygame
 
 import placeholders as pl
 
-import ai_snake as ai
 
 # Константы для размеров поля и сетки:
 SCREEN_WIDTH, SCREEN_HEIGHT = 640, 480
@@ -89,7 +88,7 @@ class Apple(GameObject):
         """Инициализация яблока"""
         self.body_color = APPLE_COLOR
         self.image = pygame.image.load('images/apple.png')
-        self.image = pygame.transform.scale(self.image, (25, 25))
+        self.image = pygame.transform.scale(self.image, (20, 20))
         self.position = self.randomize_position()
 
     @staticmethod
@@ -117,6 +116,7 @@ class Snake(GameObject):
 
     def __init__(self) -> None:
         """Инициализация змейки"""
+        self.direction = DEFAULT_DIRECTION
         self.reset()
 
     def update_direction(self) -> None:
@@ -125,9 +125,11 @@ class Snake(GameObject):
             self.direction = self.next_direction
             self.next_direction = None
 
+
     def get_head_position(self) -> tuple[int, int]:
         """Метод для получения позиции головы змейки"""
         return self.positions[0]
+
 
     def move(self) -> None:
         """Метод описывающий движение змейки по игровому полю"""
@@ -211,7 +213,6 @@ def handle_keys(game_object) -> None:
             handle_special_keys(event)
 
 
-@ai.check_ai
 def handle_direction(event, game_object) -> None:
     """Метод описывающий изменение направления"""
     if event.key == pygame.K_UP and game_object.direction != DOWN:
@@ -267,7 +268,6 @@ def main() -> None:
 
     while True:
         if STATE == "game_play":
-            print(ai.AI_STATE)
             clock.tick(SPEED)
             handle_keys(snake)
             screen.fill(BOARD_BACKGROUND_COLOR)
