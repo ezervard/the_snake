@@ -1,64 +1,8 @@
-from random import randint, choice
+from random import randint
 
 import pygame
 
-import placeholders as pl
-
-
-# Константы для размеров поля и сетки:
-SCREEN_WIDTH, SCREEN_HEIGHT = 640, 480
-GRID_SIZE = 20
-GRID_WIDTH = SCREEN_WIDTH // GRID_SIZE
-GRID_HEIGHT = SCREEN_HEIGHT // GRID_SIZE
-CENTER_POSITION = SCREEN_WIDTH // 2 - GRID_SIZE, SCREEN_HEIGHT // 2 - GRID_SIZE
-
-# Направления движения:
-UP = (0, -1)
-DOWN = (0, 1)
-LEFT = (-1, 0)
-RIGHT = (1, 0)
-
-DIRECTIONS = [UP, DOWN, LEFT, RIGHT]
-DEFAULT_DIRECTION = choice(DIRECTIONS)
-
-# Цвет фона - черный:
-BOARD_BACKGROUND_COLOR = (108, 156, 31)
-BACKGROUND_IMG = pygame.image.load('images/background.png')
-BACKGROUND_IMG = pygame.transform.scale(BACKGROUND_IMG, (640, 490))
-
-# Цвет границы ячеек
-BORDER_COLOR = (93, 216, 228)
-
-# Цвет по умолчанию
-DEFAULT_COLOR = (100, 100, 100)
-
-# Цвет яблока
-APPLE_COLOR = (255, 0, 0)
-
-# Цвет змейки
-SNAKE_COLOR = (0, 255, 0)
-
-# Скорость движения змейки:
-SPEED = 10
-
-# Настройка игрового окна:
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT + 30), 0, 32)
-
-# Переменная состояний
-STATE = "game_play"
-
-
-# Игровые звуки
-BACKGROUND_MUSIC = pygame.mixer.Sound('sounds/main_theme.mp3')
-APPLE_SOUND = pygame.mixer.Sound('sounds/apple.mp3')
-SELF_EAT_SOUND = pygame.mixer.Sound('sounds/self_eat.mp3')
-CHOOSE_SOUND = pygame.mixer.Sound('sounds/key_sound.mp3')
-
-# Заголовок окна игрового поля:
-pygame.display.set_caption('Змейка')
-
-# Настройка времени:
-clock = pygame.time.Clock()
+from moduls import CONSTANTS as ct, handlers_key as hd, placeholders as pl
 
 
 class GameObject:
@@ -66,15 +10,15 @@ class GameObject:
 
     def __init__(self) -> None:
         """Инициализация объекта игры."""
-        self.position = CENTER_POSITION
-        self.body_color = DEFAULT_COLOR
+        self.position = ct.CENTER_POSITION
+        self.body_color = ct.DEFAULT_COLOR
 
     @staticmethod
     def draw_cell(position, body_color) -> None:
         """Метод для отрисовки ячейки"""
-        rect = pygame.Rect(position, (GRID_SIZE, GRID_SIZE))
-        pygame.draw.rect(screen, body_color, rect)
-        pygame.draw.rect(screen, BORDER_COLOR, rect, 1)
+        rect = pygame.Rect(position, (ct.GRID_SIZE, ct.GRID_SIZE))
+        pygame.draw.rect(ct.screen, body_color, rect)
+        pygame.draw.rect(ct.screen, ct.BORDER_COLOR, rect, 1)
 
     def draw(self):
         """Метод для переопределения в дочерних классах"""
@@ -86,19 +30,20 @@ class Apple(GameObject):
 
     def __init__(self) -> None:
         """Инициализация яблока"""
-        self.body_color = APPLE_COLOR
+        super().__init__()
+        self.body_color = ct.APPLE_COLOR
         self.image = pygame.image.load('images/apple.png')
         self.image = pygame.transform.scale(self.image, (20, 20))
         self.position = self.randomize_position()
 
     @staticmethod
-    def randomize_position(snake_pos=CENTER_POSITION) -> tuple[int, int]:
+    def randomize_position(snake_pos=ct.CENTER_POSITION) -> tuple[int, int]:
         """Метод для случайной генерации позиции яблока
         с учётом позиции змейки.
         """
         while True:
-            x_coord = randint(0, GRID_WIDTH - 1) * GRID_SIZE
-            y_coord = randint(0, GRID_HEIGHT - 1) * GRID_SIZE
+            x_coord = randint(0, ct.GRID_WIDTH - 1) * ct.GRID_SIZE
+            y_coord = randint(0, ct.GRID_HEIGHT - 1) * ct.GRID_SIZE
             if (x_coord, y_coord) in snake_pos:
                 continue
             else:
@@ -106,17 +51,25 @@ class Apple(GameObject):
 
     def draw(self) -> None:
         """Метод для отрисовки яблока"""
-        screen.blit(self.image, self.position)
+        ct.screen.blit(self.image, self.position)
 
 
 class Snake(GameObject):
     """Клас описывающий змейку"""
 
-    position = CENTER_POSITION
+    position = ct.CENTER_POSITION
 
     def __init__(self) -> None:
         """Инициализация змейки"""
-        self.direction = DEFAULT_DIRECTION
+        super().__init__()
+        self.positions = None
+        self.length = 1
+        self.tail = None
+        self.head_rot = None
+        self.head = None
+        self.image = None
+        self.next_direction = None
+        self.direction = ct.DEFAULT_DIRECTION
         self.reset()
 
     def update_direction(self) -> None:
@@ -125,27 +78,25 @@ class Snake(GameObject):
             self.direction = self.next_direction
             self.next_direction = None
 
-
     def get_head_position(self) -> tuple[int, int]:
         """Метод для получения позиции головы змейки"""
         return self.positions[0]
 
-
     def move(self) -> None:
         """Метод описывающий движение змейки по игровому полю"""
-        global STATE
+
         dx, dy = self.direction
         head_x, head_y = self.get_head_position()
 
-        new_head_x = (head_x + dx * GRID_SIZE) % SCREEN_WIDTH
-        new_head_y = (head_y + dy * GRID_SIZE) % SCREEN_HEIGHT
+        new_head_x = (head_x + dx * ct.GRID_SIZE) % ct.SCREEN_WIDTH
+        new_head_y = (head_y + dy * ct.GRID_SIZE) % ct.SCREEN_HEIGHT
 
         new_head_position = (new_head_x, new_head_y)
 
         if new_head_position in self.positions:
             self.reset()
-            SELF_EAT_SOUND.play()
-            STATE = 'game_over'
+            ct.SELF_EAT_SOUND.play()
+            ct.STATE = 'game_over'
 
         self.positions.insert(0, new_head_position)
 
@@ -160,11 +111,11 @@ class Snake(GameObject):
     def rotate_head(self) -> None:
         """Метод поворота головы"""
         self.head_rot = self.head
-        if self.direction == RIGHT:
+        if self.direction == ct.RIGHT:
             self.head_rot = pygame.transform.rotate(self.head_rot, -90)
-        elif self.direction == LEFT:
+        elif self.direction == ct.LEFT:
             self.head_rot = pygame.transform.rotate(self.head_rot, 90)
-        elif self.direction == UP:
+        elif self.direction == ct.UP:
             self.head_rot = pygame.transform.rotate(self.head_rot, 0)
         else:
             self.head_rot = pygame.transform.rotate(self.head_rot, 180)
@@ -172,10 +123,10 @@ class Snake(GameObject):
     def reset(self):
         """Метод для перезапуска игры"""
         self.length = 1
-        self.positions = [CENTER_POSITION]
-        self.direction = DEFAULT_DIRECTION
+        self.positions = [ct.CENTER_POSITION]
+        self.direction = ct.DEFAULT_DIRECTION
         self.next_direction = None
-        self.body_color = SNAKE_COLOR
+        self.body_color = ct.SNAKE_COLOR
         self.image = pygame.image.load('images/snake_body.png')
         self.image = pygame.transform.scale(self.image, (20, 20))
         self.head = pygame.image.load('images/snake_head.png')
@@ -189,116 +140,58 @@ class Snake(GameObject):
         """Метод для отрисовки змейки"""
         for i, position in enumerate(self.positions):
             if position == self.get_head_position():
-                screen.blit(self.head_rot, position)
+                ct.screen.blit(self.head_rot, position)
             elif i == len(self.positions) - 1:
-                # Поворачиваем хвост
                 dx = self.positions[-1][0] - self.positions[-2][0]
                 dy = self.positions[-1][1] - self.positions[-2][1]
                 angle = pygame.math.Vector2(dx, dy).angle_to((1, 0))
                 rotated_tail = pygame.transform.rotate(self.tail, angle)
-                screen.blit(rotated_tail, position)
+                ct.screen.blit(rotated_tail, position)
             else:
-                screen.blit(self.image, position)
-
-
-def handle_keys(game_object) -> None:
-    """Функция для обработки нажатий клавиш"""
-    global STATE
-
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            quit_game()
-        elif event.type == pygame.KEYDOWN:
-            handle_direction(event, game_object)
-            handle_special_keys(event)
-
-
-def handle_direction(event, game_object) -> None:
-    """Метод описывающий изменение направления"""
-    if event.key == pygame.K_UP and game_object.direction != DOWN:
-        game_object.next_direction = UP
-    elif event.key == pygame.K_DOWN and game_object.direction != UP:
-        game_object.next_direction = DOWN
-    elif event.key == pygame.K_LEFT and game_object.direction != RIGHT:
-        game_object.next_direction = LEFT
-    elif event.key == pygame.K_RIGHT and game_object.direction != LEFT:
-        game_object.next_direction = RIGHT
-
-
-def handle_special_keys(event) -> None:
-    """Обработка специальных клавиш"""
-    global STATE
-    if event.key == pygame.K_ESCAPE:
-        quit_game()
-    elif event.key == pygame.K_SPACE:
-        CHOOSE_SOUND.play()
-        state_change()
-    elif event.key == pygame.K_F1:
-        if not ai.AI_STATE:
-            ai.AI_STATE = True
-        else:
-            ai.AI_STATE = False
-
-
-def quit_game() -> None:
-    """Выход из игры"""
-    pygame.quit()
-    raise SystemExit
-
-
-def state_change() -> None:
-    """Изменение переменной состояния"""
-    global STATE
-    if STATE == "game_play":
-        STATE = "game_pause"
-    elif STATE == "game_pause":
-        STATE = "game_play"
-    elif STATE == "game_over":
-        STATE = "game_play"
+                ct.screen.blit(self.image, position)
 
 
 def main() -> None:
     """Основной цикл игры"""
-    global SPEED
     pygame.init()
     apple = Apple()
     snake = Snake()
-    BACKGROUND_MUSIC.set_volume(0.1)
-    BACKGROUND_MUSIC.play()
+    ct.BACKGROUND_MUSIC.set_volume(0.1)
+    ct.BACKGROUND_MUSIC.play()
 
     while True:
-        if STATE == "game_play":
-            clock.tick(SPEED)
-            handle_keys(snake)
-            screen.fill(BOARD_BACKGROUND_COLOR)
-            screen.blit(BACKGROUND_IMG, (-3, -10))
+        if ct.STATE == "game_play":
+            ct.clock.tick(ct.SPEED)
+            hd.handle_keys(snake)
+            ct.screen.fill(ct.BOARD_BACKGROUND_COLOR)
+            ct.screen.blit(ct.BACKGROUND_IMG, (-3, -10))
             apple.draw()
             snake.draw()
             snake.move()
             snake.update_direction()
-            pygame.draw.line(screen, (50, 56, 50), (0, SCREEN_HEIGHT), (SCREEN_WIDTH, SCREEN_HEIGHT), 3)
-            screen.blit(pl.score_text, (10, SCREEN_HEIGHT + 10))
-            screen.blit(pl.info, (150, SCREEN_HEIGHT + 10))
+            pygame.draw.line(ct.screen, (50, 56, 50), (0, ct.SCREEN_HEIGHT), (ct.SCREEN_WIDTH, ct.SCREEN_HEIGHT), 3)
+            ct.screen.blit(pl.score_text, (10, ct.SCREEN_HEIGHT + 10))
+            ct.screen.blit(pl.info, (150, ct.SCREEN_HEIGHT + 10))
             if snake.get_head_position() == apple.position:
                 snake.length += 1
                 score = snake.length - 1
-                SPEED += 0.1
+                ct.SPEED += 0.1
                 apple.position = apple.randomize_position(snake.positions)
-                APPLE_SOUND.set_volume(300)
-                APPLE_SOUND.play()
+                ct.APPLE_SOUND.set_volume(300)
+                ct.APPLE_SOUND.play()
                 pl.score_text = pl.score_font.render(f"Score: {score}", True, pygame.color.Color('White'))
                 pl.loose_score = pl.loose_font.render(f"You Score: {score}", True, pygame.color.Color(pl.RED_CLR))
             pygame.display.update()
-        elif STATE == "game_pause":
-            handle_keys(snake)
-            screen.blit(pl.pause_text, (280, 180))
-            screen.blit(pl.pause_info, (220, 230))
+        elif ct.STATE == "game_pause":
+            hd.handle_keys(snake)
+            ct.screen.blit(pl.pause_text, (280, 180))
+            ct.screen.blit(pl.pause_info, (220, 230))
             pygame.display.update()
-        elif STATE == "game_over":
-            handle_keys(snake)
-            screen.blit(pl.loose_text, (260, 180))
-            screen.blit(pl.loose_info, (225, 230))
-            screen.blit(pl.loose_score, (260, 280))
+        elif ct.STATE == "game_over":
+            hd.handle_keys(snake)
+            ct.screen.blit(pl.loose_text, (260, 180))
+            ct.screen.blit(pl.loose_info, (225, 230))
+            ct.screen.blit(pl.loose_score, (260, 280))
             pygame.display.update()
 
 
