@@ -1,6 +1,6 @@
 import pygame
 
-from moduls import CONSTANTS as ct
+from Moduls import CONSTANTS as ct
 
 
 def handle_keys(game_object) -> None:
