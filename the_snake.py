@@ -1,8 +1,11 @@
+import sys
 from random import randint
 
 import pygame
 
-from moduls import CONSTANTS as ct, handlers_key as hd, placeholders as pl
+from Moduls import CONSTANTS as ct, handlers_key as hd, placeholders as pl
+
+import heapq
 
 
 class GameObject:
@@ -32,8 +35,8 @@ class Apple(GameObject):
         """Инициализация яблока"""
         super().__init__()
         self.body_color = ct.APPLE_COLOR
-        self.image = pygame.image.load('images/apple.png')
-        self.image = pygame.transform.scale(self.image, (20, 20))
+        self.image = pygame.image.load('images/Apple.png')
+        self.image = pygame.transform.scale(self.image, (ct.GRID_SIZE, ct.GRID_SIZE))
         self.position = self.randomize_position()
 
     @staticmethod
@@ -57,20 +60,20 @@ class Apple(GameObject):
 class Snake(GameObject):
     """Клас описывающий змейку"""
 
-    position = ct.CENTER_POSITION
-
     def __init__(self) -> None:
         """Инициализация змейки"""
         super().__init__()
-        self.positions = None
         self.length = 1
-        self.tail = None
-        self.head_rot = None
-        self.head = None
-        self.image = None
-        self.next_direction = None
+        self.positions = [ct.CENTER_POSITION]
         self.direction = ct.DEFAULT_DIRECTION
-        self.reset()
+        self.next_direction = None
+        self.image = pygame.image.load('images/snake_body.png')
+        self.image = pygame.transform.scale(self.image, (ct.GRID_SIZE, ct.GRID_SIZE))
+        self.head = pygame.image.load('images/snake_head.png')
+        self.head = pygame.transform.scale(self.head, (ct.GRID_SIZE, ct.GRID_SIZE))
+        self.tail = pygame.image.load('images/snake_tail.png')
+        self.tail = pygame.transform.scale(self.tail, (ct.GRID_SIZE, ct.GRID_SIZE))
+        self.head_rot = self.head
 
     def update_direction(self) -> None:
         """Метод для изменения направления движения"""
@@ -120,7 +123,7 @@ class Snake(GameObject):
         else:
             self.head_rot = pygame.transform.rotate(self.head_rot, 180)
 
-    def reset(self):
+    def reset(self) -> None:
         """Метод для перезапуска игры"""
         self.length = 1
         self.positions = [ct.CENTER_POSITION]
@@ -128,15 +131,15 @@ class Snake(GameObject):
         self.next_direction = None
         self.body_color = ct.SNAKE_COLOR
         self.image = pygame.image.load('images/snake_body.png')
-        self.image = pygame.transform.scale(self.image, (20, 20))
+        self.image = pygame.transform.scale(self.image, (ct.GRID_SIZE, ct.GRID_SIZE))
         self.head = pygame.image.load('images/snake_head.png')
-        self.head = pygame.transform.scale(self.head, (20, 20))
+        self.head = pygame.transform.scale(self.head, (ct.GRID_SIZE, ct.GRID_SIZE))
         self.tail = pygame.image.load('images/snake_tail.png')
-        self.tail = pygame.transform.scale(self.tail, (20, 20))
-        self.tail = pygame.transform.rotate(self.tail, 90)
+        self.tail = pygame.transform.scale(self.tail, (ct.GRID_SIZE, ct.GRID_SIZE))
+        # self.tail = pygame.transform.rotate(self.tail, -90)
         self.head_rot = self.head
 
-    def draw(self):
+    def draw(self) -> None:
         """Метод для отрисовки змейки"""
         for i, position in enumerate(self.positions):
             if position == self.get_head_position():
@@ -151,6 +154,87 @@ class Snake(GameObject):
                 ct.screen.blit(self.image, position)
 
 
+def create_graph(width, height, obstacles) -> dict[tuple[int, int], list[tuple[int, int]]]:
+    graph = {}
+    for y in range(height):
+        for x in range(width):
+            if (x, y) in obstacles:
+                continue
+            node = (x, y)
+            neighbors = []
+            if y > 0 and (x, y - 1) not in obstacles:
+                neighbors.append((x, y - 1))
+            if y < height - 1 and (x, y + 1) not in obstacles:
+                neighbors.append((x, y + 1))
+            if x > 0 and (x - 1, y) not in obstacles:
+                neighbors.append((x - 1, y))
+            if x < width - 1 and (x + 1, y) not in obstacles:
+                neighbors.append((x + 1, y))
+            graph[node] = neighbors
+    return graph
+
+
+def dijkstra(graph, start, goal) -> list:
+    queue = []
+    heapq.heappush(queue, (0, start))
+    distances = {node: float('inf') for node in graph}
+    distances[start] = 0
+    previous_nodes = {node: None for node in graph}
+
+    while queue:
+        current_distance, current_node = heapq.heappop(queue)
+        if current_node == goal:
+            path = []
+            while previous_nodes[current_node] is not None:
+                path.append(current_node)
+                current_node = previous_nodes[current_node]
+            path.append(start)
+            path.reverse()
+            return path
+
+        for neighbor in graph[current_node]:
+            distance = current_distance + 1
+            if distance < distances[neighbor]:
+                distances[neighbor] = distance
+                previous_nodes[neighbor] = current_node
+                heapq.heappush(queue, (distance, neighbor))
+
+
+def screen_to_graph_cords(screen_x, screen_y) -> [int, int]:
+    graph_x = screen_x // ct.GRID_SIZE
+    graph_y = screen_y // ct.GRID_SIZE
+    return graph_x, graph_y
+
+
+def graph_to_screen_cords(graph_x, graph_y) -> [int, int]:
+    screen_x = graph_x * ct.GRID_SIZE
+    screen_y = graph_y * ct.GRID_SIZE
+    return screen_x, screen_y
+
+
+def graph_dir(path) -> list:
+    screen_path = []
+    for i in path:
+        screen_path.append(graph_to_screen_cords(i[0], i[1]))
+    return screen_path
+
+
+def next_dir(next_position, current_position) -> str:
+    x_diff = next_position[0] - current_position[0]
+    y_diff = next_position[1] - current_position[1]
+    print(x_diff, y_diff)
+    if x_diff == 0:
+        if y_diff >= 0:
+            return 'DOWN'
+        elif y_diff <= 0:
+            return 'UP'
+    elif y_diff == 0:
+        if x_diff >= 0:
+            return 'RIGHT'
+        elif x_diff <= 0:
+            return 'LEFT'
+
+
 def main() -> None:
     """Основной цикл игры"""
     pygame.init()
@@ -158,6 +242,9 @@ def main() -> None:
     snake = Snake()
     ct.BACKGROUND_MUSIC.set_volume(0.1)
     ct.BACKGROUND_MUSIC.play()
+    graph = create_graph(ct.GRID_WIDTH, ct.GRID_HEIGHT, set())
+    path = dijkstra(graph, screen_to_graph_cords(snake.get_head_position()[0], snake.get_head_position()[1]),
+                    screen_to_graph_cords(apple.position[0], apple.position[1]))
 
     while True:
         if ct.STATE == "game_play":
@@ -172,6 +259,7 @@ def main() -> None:
             pygame.draw.line(ct.screen, (50, 56, 50), (0, ct.SCREEN_HEIGHT), (ct.SCREEN_WIDTH, ct.SCREEN_HEIGHT), 3)
             ct.screen.blit(pl.score_text, (10, ct.SCREEN_HEIGHT + 10))
             ct.screen.blit(pl.info, (150, ct.SCREEN_HEIGHT + 10))
+
             if snake.get_head_position() == apple.position:
                 snake.length += 1
                 score = snake.length - 1
@@ -194,7 +282,46 @@ def main() -> None:
             ct.screen.blit(pl.loose_score, (260, 280))
             pygame.display.update()
 
+        elif ct.STATE == "ai":
+            hd.handle_keys(snake)
+            snake.update_direction()
+            ct.screen.fill(ct.BOARD_BACKGROUND_COLOR)
+            ct.screen.blit(ct.BACKGROUND_IMG, (-3, -10))
+            pygame.draw.line(ct.screen, (50, 56, 50), (0, ct.SCREEN_HEIGHT), (ct.SCREEN_WIDTH, ct.SCREEN_HEIGHT), 3)
+            ct.screen.blit(pl.score_text, (10, ct.SCREEN_HEIGHT + 10))
+            ct.screen.blit(pl.info, (150, ct.SCREEN_HEIGHT + 10))
+            ct.screen.blit(pl.state_text, (180, 100))
+            apple.draw()
+            snake.draw()
+            snake.move()
+            path = dijkstra(graph, screen_to_graph_cords(snake.get_head_position()[0], snake.get_head_position()[1]),
+                            screen_to_graph_cords(apple.position[0], apple.position[1]))
+            screen_path = graph_dir(path)
+            for i, idx in enumerate(screen_path):
+                _next = next_dir(idx, snake.get_head_position())
+
+                if _next == 'RIGHT' and snake.direction != ct.LEFT:
+                    snake.next_direction = ct.RIGHT
+                elif _next == 'LEFT' and snake.direction != ct.RIGHT:
+                    snake.next_direction = ct.LEFT
+                elif _next == 'UP' and snake.direction != ct.DOWN:
+                    snake.next_direction = ct.UP
+                elif _next == 'DOWN' and snake.direction != ct.UP:
+                    snake.next_direction = ct.DOWN
+
+            if snake.get_head_position() == apple.position:
+                snake.length += 1
+                score = snake.length - 1
+                pl.score_text = pl.score_font.render(f"Score: {score}", True, pygame.color.Color('White'))
+                pl.loose_score = pl.loose_font.render(f"You Score: {score}", True, pygame.color.Color(pl.RED_CLR))
+                apple.position = Apple.randomize_position(snake.positions)
+                path = dijkstra(graph,
+                                screen_to_graph_cords(snake.get_head_position()[0], snake.get_head_position()[1]),
+                                screen_to_graph_cords(apple.position[0], apple.position[1]))
+
+            pygame.display.update()
+            ct.clock.tick(ct.SPEED)
+
 
 if __name__ == '__main__':
     main()
-
