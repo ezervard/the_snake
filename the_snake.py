@@ -3,7 +3,7 @@ from random import randint
 
 import pygame
 
-from Moduls import CONSTANTS as ct, handlers_key as hd, placeholders as pl
+from moduls import CONSTANTS as ct, handlers_key as hd, placeholders as pl
 
 import heapq
 
